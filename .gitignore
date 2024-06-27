@@ -1,0 +1,13 @@
+env/
+node_modules/
+jobsift/static/admin/
+jobsift/static/autocomplete_light/
+jobsift/static/dal_select2/
+*/__pycache__/*
+*.pyc
+dump.rdb
+.DS_Store
+package-lock.json
+package.json
+yarn.lock
+jobsift/static/CACHE
