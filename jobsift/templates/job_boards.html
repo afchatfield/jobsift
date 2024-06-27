@@ -1,0 +1,296 @@
+<!-- templates/job_boards.html -->
+
+{% extends "_base.html" %}
+
+{% block content %}
+<h1 class="text-3xl text-green-800">Job Boards</h1>
+
+<div class="container mx-auto pt-2 flex flex-row" id="job-boards">
+    <div id="job-board-list-container" class="w-72 h-screen relative pl-5 border-r">
+        <div class="h-full overflow-y-auto">
+            <ul>
+                {% for job_board in job_boards %}
+                <li class="p-2 cursor-pointer rounded-l-lg" id="job-board-{{job_board.id}}"> 
+                    <a href="#{{job_board.name}}" class="text-xl pr-6" onclick="updateJobDetails('{{job_board.id}}')"> {{ job_board.name }} 
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="p-2 sticky inset-x-0 bottom-0">
+            <form method="post" id="job-board-form" name="job_board_form" class="hidden bg-white shadow-md rounded-md p-4 mb-2 mt-6 w-full">
+                {% csrf_token %}
+                <h2 id="job-board-form-title" class="text-lg font-semibold">New Job Board</h2> 
+                <div class="grid gap-3 mb-6">
+                    <div>
+                        <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                        <input type="text" id="job-board-input-name" name="name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required disabled/>
+                    </div>
+                    <div>
+                        <label for="url" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">URL</label>
+                        <input type="url" id="job-board-input-url" name="url" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required disabled/>
+                    </div>
+                </div>
+                <span class="p-2 bg-gray-100 hover:bg-gray:200 rounded">
+                    <button type="submit" name="job_board_form_submit">Create</button>
+                </span>
+            </form>
+            <button id="reveal-button" onclick="revealJobBoardForm(this)" class="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-semi-bold rounded">
+                Add New Job Board
+            </button>
+        </div>
+    </div>
+  
+    <div id="job-board-container" class="w-full px-4">
+        <div class="bg-white shadow-md rounded-md p-4">
+            <h2 id="job-board-name" class="text-lg font-semibold"></h2> 
+            <a id="job-board-url" class="text-blue-500 underline" target="_blank" href=""></a>
+
+            <div class="flex flex-col py-2">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Status</h3>
+                    <button 
+                        id="dropdown-button" 
+                        class="bg-white rounded-full flex items-center text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500" 
+                        aria-haspopup="true" 
+                        aria-expanded="true"
+                        onclick="revealStatusTable(event)">
+                        <span class="sr-only">Open options</span>
+                        <!-- Current status will be displayed here -->
+                        <i id="status-icon" class="mr-2 fa-solid fa-circle" style="color: #34C759;"></i> <!-- change to orange/red depending on status -->
+                        <span id="current-status">Active</span>
+                        <!-- Dropdown icon -->
+                        <i id="dropdown-icon" class="fas fa-chevron-down ml-2"></i>
+                    </button>   
+                </div>
+                <div 
+                id="status-table"
+                class="w-full divide-y divide-gray-100 focus:outline-none hidden" 
+                aria-orientation="vertical" 
+                aria-labelledby="options-menu">
+                    <table id="dropdown-table" class="w-full min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selector</th>
+                              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inactive-rows">
+                            <!-- Inactive rows will be displayed here -->
+                            <!-- <tr>
+                                <td class="px-6 py-2 whitespace-nowrap">Inactive Row 1</td>
+                                <td class="px-6 py-2 text-right whitespace-nowrap">
+                                  <i class="fa-solid fa-circle" style="color: #ef4444;"></i>
+                                  <span class="ml-1">Failed</span>
+                                  <button id="dropdown-button" class="text-gray-400 hover:text-gray-600" onclick="revealErrorMessage(this)">
+                                    <i id="dropdown-icon" class="fas fa-chevron-down ml-2"></i>
+                                  </button>
+                                </td>
+                            </tr>
+                            <tr id="dropdown-textbox" class="hidden">
+                                <td colspan="2" class="px-6">
+                                  <p class="mt-1 block w-full py-2 px-3 text-sm">Textbox content</p>
+                                </td>
+                            </tr> -->
+                        </tbody>
+                        <!-- Active rows -->
+                        <tbody style="border-top:none;">
+                            <tr id="active-rows-header">
+                                <td id="active-selectors-text" class="px-6 py-2 whitespace-nowrap">Selectors Active</td>
+                                <td class="px-6 py-2 text-right whitespace-nowrap">
+                                    <i class="fa-solid fa-circle" style="color: #34C759;"></i>
+                                    <button id="active-dropdown-button" class="text-gray-400 hover:text-gray-600" onclick="revealActiveRows()">
+                                        <i id="active-dropdown-icon" class="fas fa-chevron-down ml-2"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tbody id="active-rows" class="hidden" style="border-top:none;">
+                                <!-- active rows go here -->
+                                <!-- <tr>
+                                    <td class="px-6 py-2 whitespace-nowrap">Active Row 1</td>
+                                    <td class="px-6 py-2 text-right whitespace-nowrap">
+                                        <i class="fa-solid fa-circle" style="color: #22c55e;"></i>
+                                        <span class="ml-1">Active</span>
+                                    </td>
+                                </tr> -->
+                            </tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="job-board-selectors" class="py-2">
+                <form method="post" id="job-board-search-selector-form" name="job_board_search_selector_form">
+                    {% csrf_token %}
+                    {{ search_selector_formset.management_form }}
+                    <input id="job-board-id" type="number" class="hidden" name="job-board-id" readonly/>
+                    <div class="flex justify-between">
+                        <h2 class="font-semibold">Search & Navigation Fields</h2>
+                        <span class="bg-gray-100 rounded px-2 cursor-pointer hover:bg-gray-200" onclick="unlockForm('job-board-search-selector-form')">
+                            <i id="form-lock" class="fa-solid fa-lock"></i>
+                        </span>
+                    </div>
+                    
+                    <div class="p-2">
+                        <div class="grid gap-6 mb-6 md:grid-cols-2">
+                            <div>
+                                <label for="search_title" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Search Title Input</label>
+                                <input type="text" class="hidden" name="form-0-selector_type"  value="search_title" defaultValue="search_title" readonly/>
+                                <input type="text" id="input-search_title" name="form-0-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required disabled/>
+                            </div>
+                            <div>
+                                <label for="search_location" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Search Location Input</label>
+                                <input type="text" class="hidden" name="form-1-selector_type"  value="search_location" defaultValue="search_location" readonly/>
+                                <input type="text" id="input-search_location" name="form-1-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required disabled/>
+                            </div>
+                            <div>
+                                <label for="search_submit" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Search Submit Button</label>
+                                <input type="text" class="hidden" name="form-2-selector_type"  value="search_submit" defaultValue="search_submit" readonly/>
+                                <input type="text" id="input-search_submit" name="form-2-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required disabled/>
+                            </div>
+                            <div>
+                                <label for="next_page" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Next Page Button</label>
+                                <input type="text" class="hidden" name="form-3-selector_type"  value="next_page" defaultValue="next_page" readonly/>
+                                <input type="text" id="input-next_page" name="form-3-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required disabled/>
+                            </div>
+                            <div>
+                                <label for="result_iterator" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Result Iterator</label>
+                                <input type="text" class="hidden" name="form-4-selector_type"  value="result_iterator" defaultValue="result_iterator" readonly/>
+                                <input type="text" id="input-result_iterator" name="form-4-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required disabled/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span id="save-changes-button" class="bg-gray-100 hover:bg-gray-200 hidden">
+                            <button type="submit" name="job_board_search_selector_form_submit">Save Changes</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+            
+            <div id="job-board-selectors">
+                <form method="post" id="job-board-selector-form" name="job_board_selector_form">
+                    {% csrf_token %}
+                    {{ selector_formset.management_form }}
+                    <input id="job-board-id" type="number" class="hidden" name="job-board-id" readonly/>
+                    <div class="flex justify-between">
+                        <h2 class="font-semibold">Basic Fields</h2>
+                        <span class="bg-gray-100 rounded px-2 cursor-pointer hover:bg-gray-200" onclick="unlockForm('job-board-selector-form')">
+                            <i id="form-lock" class="fa-solid fa-lock"></i>
+                        </span>
+                    </div>
+                    
+                    <div class="p-2">
+                        <div class="grid gap-6 mb-6 md:grid-cols-2">
+                            <div>
+                                <label for="title" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Title</label>
+                                <input type="text" class="hidden" name="form-0-job_field"  value="title" defaultValue="title" readonly/>
+                                <input type="text" id="input-title" name="form-0-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="company" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company</label>
+                                <input type="text" class="hidden" name="form-1-job_field"  value="company" defaultValue="company" readonly/>
+                                <input type="text" id="input-company" name="form-1-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="location" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Location</label>
+                                <input type="text" class="hidden" name="form-2-job_field"  value="location" defaultValue="location" readonly/>
+                                <input type="text" id="input-location" name="form-2-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>  
+                            <div>
+                                <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Description</label>
+                                <input type="text" class="hidden" name="form-3-job_field"  value="description" defaultValue="description" readonly/>
+                                <input type="text" id="input-description" name="form-3-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="job_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Job Type</label>
+                                <input type="text" class="hidden" name="form-4-job_field"  value="job_type" defaultValue="job_type" readonly/>
+                                <input type="text" id="input-job_type" name="form-4-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="working_model" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Working Model</label>
+                                <input type="text" class="hidden" name="form-5-job_field"  value="working_model" defaultValue="working_model" readonly/>
+                                <input type="text" id="input-visitors" name="form-5-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="salary" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Salary</label>
+                                <input type="text" class="hidden" name="form-6-job_field"  value="salary" defaultValue="salary" readonly/>
+                                <input type="text" id="input-salary" name="form-6-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="created_at" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Created At</label>
+                                <input type="text" class="hidden" name="form-7-job_field"  value="created_at" defaultValue="created_at" readonly/>
+                                <input type="text" id="input-created_at" name="form-7-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="toggle-advanced-fields" onclick="revealAdvancedFields(event)" class="bg-gray-100 hover:bg-gray-200 font-semibold py-2 px-4 rounded w-8 h-8 flex justify-center items-center mx-auto">
+                        +
+                    </button>
+
+                    <div class="hidden" id="advanced-fields">
+                        <h2 class="font-semibold">Advanced Fields</h2>
+                        <div class="p-2 grid gap-6 mb-6 md:grid-cols-2">
+                            <div>
+                                <label for="education" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Education</label>
+                                <input type="text" class="hidden" name="form-8-job_field"  value="education" defaultValue="education" readonly/>
+                                <input type="text" id="input-education" name="form-8-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="skills" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Skills</label>
+                                <input type="text" class="hidden" name="form-9-job_field"  value="skills" defaultValue="skills" readonly/>
+                                <input type="text" id="input-skills" name="form-9-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="qualifications" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Qualifications</label>
+                                <input type="text" class="hidden" name="form-10-job_field"  value="qualifications" defaultValue="qualifications" readonly/>
+                                <input type="text" id="input-qualifications" name="form-10-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>  
+                            <div>
+                                <label for="benefits" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Benefits</label>
+                                <input type="text" class="hidden" name="form-11-job_field"  value="benefits" defaultValue="benefits" readonly/>
+                                <input type="text" id="input-benefits" name="form-11-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="experience" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Experience</label>
+                                <input type="text" class="hidden" name="form-12-job_field"  value="experience" defaultValue="experience" readonly/>
+                                <input type="text" id="input-experience" name="form-12-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="application_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Application Email</label>
+                                <input type="text" class="hidden" name="form-13-job_field"  value="application_email" defaultValue="application_email" readonly/>
+                                <input type="text" id="input-application_email" name="form-13-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="application_url" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Application URL</label>
+                                <input type="text" class="hidden" name="form-14-job_field"  value="application_url" defaultValue="application_url" readonly/>
+                                <input type="text" id="input-application_email" name="form-14-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                            <div>
+                                <label for="deadline" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Deadline</label>
+                                <input type="text" class="hidden" name="form-15-job_field"  value="deadline" defaultValue="deadline" readonly/>
+                                <input type="text" id="input-deadline" name="form-15-css_selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" disabled/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span id="save-changes-button" class="bg-gray-100 hover:bg-gray-200 hidden">
+                            <button type="submit" name="job_board_selector_form_submit">Save Changes</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<br>
+  <!-- <form method="post" name="job_board_form">
+      {% csrf_token %}
+      {{ job_board_form.as_p }}
+      <button type="submit" name="job_board_form_submit">Create</button>
+  </form> -->
+{% endblock %}
+
